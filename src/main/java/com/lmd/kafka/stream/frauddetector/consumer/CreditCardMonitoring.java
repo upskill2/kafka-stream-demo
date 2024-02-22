@@ -8,16 +8,15 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerializer;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Repartitioned;
-import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.stereotype.Component;
+import org.apache.kafka.streams.kstream.KStream;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Component
 public class CreditCardMonitoring {
@@ -27,8 +26,11 @@ public class CreditCardMonitoring {
     @Autowired
     public void buildTopology (StreamsBuilder builder, KafkaProperties kafkaProperties) {
 
-        SpecificAvroSerde<CreditCardTransaction> serializer = new SpecificAvroSerde<CreditCardTransaction> ();
+        SpecificAvroSerde<CreditCardTransaction> serializer = new SpecificAvroSerde<> ();
+        var lockSerde = new SpecificAvroSerde<CreditCardLock>(); // ++
+
         serializer.configure (kafkaProperties.buildConsumerProperties (null), false);
+        lockSerde.configure(kafkaProperties.buildStreamsProperties(null), false);
 
         builder.stream (
                         "credit-card-transactions",
@@ -47,15 +49,22 @@ public class CreditCardMonitoring {
                 .filter ((windowedKey, countOfFailedTransactions) -> countOfFailedTransactions > 5)
                 .map ((windowedKey, count) -> new KeyValue<> (
                         windowedKey,
-                        new CreditCardLock.Builder ()
-                                .setCreditCardNumber (windowedKey.key ()
-                                ).build ())
-                        .foreach ((windowedKey, countOfFailedTransactions) -> logger.info (
-                                "[{}] @ {}/{}: {}",
-                                windowedKey.key (),
-                                windowedKey.window ().startTime (),
-                                windowedKey.window ().endTime (),
-                                countOfFailedTransactions));
+                        CreditCardLock.newBuilder ()
+                                .setCreditCardNumber (windowedKey.key ())
+                                .setDateTime (LocalDateTime.now ())
+                                .setFailedTransactionsCount (count)
+                                .build ())
+                )
+                .peek ((creditCardNumber, lockDto) ->
+                        logger.info ("<-{}: {}", creditCardNumber, lockDto))
+
+                .to("credit-card-lock", Produced.with(Serdes.String(), lockSerde));
+/*                .foreach ((windowedKey, countOfFailedTransactions) -> logger.info (
+                        "[{}] @ {}/{}: {}",
+                        windowedKey.key (),
+                        windowedKey.window ().startTime (),
+                        windowedKey.window ().endTime (),
+                        countOfFailedTransactions));*/
     }
 
 }
