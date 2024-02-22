@@ -1,0 +1,45 @@
+{
+  "type": "record",
+  "namespace": "com.lmd.kafka.stream.frauddetector",
+  "name": "CreditCardTransaction",
+  "fields": [
+    {
+      "name": "transactionId",
+      "type": "string"
+    },
+    {
+      "name": "dateTime",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "customerId",
+      "type": "string"
+    },
+    {
+      "name": "creaditCardNumber",
+      "type": "string"
+    },
+    {
+      "name": "creaditCardExpiry",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "TransactionStatus",
+        "symbols": [
+          "ACCEPTED",
+          "REJECTED"
+        ]
+      }
+    },
+    {
+      "name": "amount",
+      "type": "double"
+    }
+  ]
+}
