@@ -2,6 +2,10 @@ spring:
   application:
     name: stream-demo
   kafka:
+    streams:
+      properties:
+        processing.guarantee: exactly_once_v2
+        num.stream.threads: 5
     bootstrap-servers:
       - localhost:9092
       - localhost:9093
