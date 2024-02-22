@@ -1,0 +1,22 @@
+{
+  "type": "record",
+  "namespace": "com.lmd.kafka.stream.frauddetector",
+  "name": "CreditCardLock",
+  "fields": [
+    {
+      "name": "creditCardNumber",
+      "type": "string"
+    },
+    {
+      "name": "dateTime",
+      "type": {
+        "type": "long",
+        "logicalType": "local-timestamp-millis"
+      }
+    },
+    {
+      "name": "failedTransactionsCount",
+      "type": "long"
+    }
+  ]
+}

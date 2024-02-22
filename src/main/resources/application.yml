@@ -2,9 +2,16 @@ spring:
   application:
     name: stream-demo
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers:
+      - localhost:9092
+      - localhost:9093
+      - localhost:9094
     properties:
-      schema.registry.url: http://localhost:8081
+      schema.registry.url: http://localhost:8085
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.KafkaAvroSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+
+logging:
+  level:
+    org.springframework.kafka.config.StreamsBuilderFactoryBean: debug
